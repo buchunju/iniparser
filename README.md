@@ -6,9 +6,9 @@ Iniparser
 Overview
 ---------
 
-     section       |            item           |           value
------------------- | ------------------------- | --------------------------
-Is enclosed in []  | Name that comes before =  | Anything that comes after =
+|       section       |            item           |           value             |
+|---------------------|---------------------------|-----------------------------|
+| Is enclosed in [ ]  | Name that comes before =  | Anything that comes after = |
 
 
 ### API Summary ###
