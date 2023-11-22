@@ -1,3 +1,16 @@
+/*****************************************************
+** File    : ini.cpp
+** Project : iniparser.
+** Date    : 09-10-20
+** Author  : Kenneth Buchunju
+** Email   : buchunjukenneth@gmail.com
+**
+** MODIFIED : [22-11-23] rewrite
+**
+** Copyright 2020 Kenneth Buchunju <buchunjukenneth@gmail.com>
+**
+******************************************************/
+
 #include "ini.h"
 
 #include <fstream>
