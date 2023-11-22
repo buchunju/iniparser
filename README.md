@@ -1,23 +1,21 @@
-Iniparser
-==========
+# Iniparser
 
 > A simple ini file parser.
 
-Overview
----------
+## Overview
 
-|       section       |            item           |           value             |
-|---------------------|---------------------------|-----------------------------|
-| Is enclosed in [ ]  | Name that comes before =  | Anything that comes after = |
+| section            | name                     | value                       |
+| ------------------ | ------------------------ | --------------------------- |
+| Is enclosed in [ ] | Name that comes before = | Anything that comes after = |
+|                    |                          |                             |
 
+### Parser Summary
 
-### API Summary ###
-
-The constructor requires ___filename___ as an argument.
+The constructor requires **_filename_** as an argument.
 
 ```c++
 
-iniparser(std::string filename);
+    IniParser(std::string filename);
 
 ```
 
@@ -25,56 +23,71 @@ Set the section name of stored values.
 
 ```c++
 
-void setSection(std::string section);
+    void setSection(std::string section);
 
 ```
 
-Incase of errors in the read or write operations.
-```c++
-
-std::string getLastError();
-
-```
-
-
-Saving data/values to ini files.
+Incase of errors during parsing the ini file an exception is thrown.
 
 ```c++
 
-void saveInt(std::string Item, int value);
-void saveString(std::string Item, std::string value);
-void saveFloat(std::string Item, float value);
-void saveDouble(std::string Item, double value);
-void saveBool(std::string Item, bool value);
+    catch(IniError e){...}
 
 ```
 
-Getting values from ini files.
+Adding name/values pairs to ini.
+
+```c++
+    template <typename T>
+    void addValue(std::string name, T value);
+
+```
+
+Getting values from ini file.
 
 ```c++
 
-int 		getInt(std::string Item);
-std::string getString(std::string Item);
-float 		getFloat(std::string Item);
-double 		getDouble(std::string Item);
-bool 		getBool(std::string Item);
+    int 		getInt(std::string name);
+    std::string getString(std::string name);
+    float 		getFloat(std::string name);
+    double 		getDouble(std::string name);
+    bool 		getBool(std::string name);
 
 ```
 
-### EXAMPLE ###
+### EXAMPLE
 
-An example of saving and retrieving values in an ini file.
+An example of adding and accessing values without saving to file.
 
 ```c++
 
-iniparser m_parser("settings/options.ini");
+    IniParser parser();
 
-m_parser.setSection("Colors");
+    parser.setSection("Colors");
+    parser.addValue("Favourite", "Black");
 
-m_parser.saveString("Favourite", "Black");
-
-std::cout << "My favoutite color is: " << m_parser.getString("Favourite") << std::endl;
+    std::cout << "My favoutite color is: " << parser["Colors"].getString("Favourite") << std::endl;
 
 
 ```
 
+Saving and parsing an ini file. This should be placed in a 'try catch' to catch exceptions that may be thrown.
+
+```c++
+    IniParser parser("test.ini");
+
+    //
+    // example save to file
+    parser.addSection("Books");
+    parser.addValue("title", "Harry Potter");
+    parser.addValue("year", 2017);
+    parser.save();
+
+    //
+    // example parse from file
+    parser.parse("test.ini");
+
+    cout << "Section: Books" << endl;
+    cout << "title:  " << parser["Books"].getString("title") << endl;
+    cout << "year: " << parser["Books"].getInt("year") << endl;
+```
