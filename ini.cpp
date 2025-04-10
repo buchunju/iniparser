@@ -6,6 +6,7 @@
 ** Email   : buchunjukenneth@gmail.com
 **
 ** MODIFIED : [22-11-23] rewrite
+** MODIFIED : [10-04-25] minor changes
 **
 ** Copyright 2020 Kenneth Buchunju <buchunjukenneth@gmail.com>
 **
@@ -16,88 +17,92 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <cctype>
+#include <stdexcept>
 
-IniData::IniData(map<string, string> sectionData, string sectionName)
-    : data(sectionData),
-      sectionName(sectionName)
-{
-}
+IniData::IniData(const std::unordered_map<std::string, std::string> &sectionData, const std::string &sectionName)
+    : data(sectionData), sectionName(sectionName) {}
 
-// get boolean value from the name within the section
-bool IniData::getBoolean(string name)
+bool IniData::getBoolean(const std::string &name) const
 {
     checkName(name);
-
-    char c = tolower(data[name][0]);
-    return (c == 'y' || c == '1' || c == 't') ? true : false;
+    char c = std::tolower(data.at(name)[0]);
+    return (c == 'y' || c == '1' || c == 't');
 }
 
-string IniData::getString(string name)
+std::string IniData::getString(const std::string &name) const
 {
     checkName(name);
-
-    return data[name];
+    return data.at(name);
 }
 
-int IniData::getInt(string name)
+int IniData::getInt(const std::string &name) const
 {
     checkName(name);
-
     try
     {
-        return stoi(data[name]);
+        return std::stoi(data.at(name));
     }
-    catch (invalid_argument)
+    catch (const std::invalid_argument &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, " the type for " + name + " is not an int.");
+        throw IniError(IniError::TYPE_MISMATCH, "The type for " + name + " is not an int.");
+    }
+    catch (const std::out_of_range &e)
+    {
+        throw IniError(IniError::TYPE_MISMATCH, "The value for " + name + " is out of range for an int.");
     }
 }
 
-float IniData::getFloat(string name)
+float IniData::getFloat(const std::string &name) const
 {
     checkName(name);
-
     try
     {
-        return stof(data[name]);
+        return std::stof(data.at(name));
     }
-    catch (invalid_argument)
+    catch (const std::invalid_argument &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, " the type for " + name + " is not a float.");
+        throw IniError(IniError::TYPE_MISMATCH, "The type for " + name + " is not a float.");
+    }
+    catch (const std::out_of_range &e)
+    {
+        throw IniError(IniError::TYPE_MISMATCH, "The value for " + name + " is out of range for a float.");
     }
 }
-double IniData::getDouble(string name)
+
+double IniData::getDouble(const std::string &name) const
 {
     checkName(name);
-
     try
     {
-        return stod(data[name]);
+        return std::stod(data.at(name));
     }
-    catch (invalid_argument)
+    catch (const std::invalid_argument &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, " the type for " + name + " is not a double.");
+        throw IniError(IniError::TYPE_MISMATCH, "The type for " + name + " is not a double.");
+    }
+    catch (const std::out_of_range &e)
+    {
+        throw IniError(IniError::TYPE_MISMATCH, "The value for " + name + " is out of range for a double.");
     }
 }
 
-void IniData::checkName(string name)
+void IniData::checkName(const std::string &name) const
 {
     if (data.find(name) == data.end())
     {
-        throw IniError(IniError::NAME_MISSING, (name + " not in " + sectionName));
+        throw IniError(IniError::NAME_MISSING, name + " not in " + sectionName);
     }
 
-    if (data[name].length() == 0)
+    if (data.at(name).empty())
     {
-        throw IniError(IniError::VALUE_MISSING, ("value for " + name + " is missing"));
+        throw IniError(IniError::VALUE_MISSING, "Value for " + name + " is missing");
     }
 }
 
-//
-IniError::IniError(IniError::TYPE type, string msg)
-    : message(msg)
+IniError::IniError(TYPE type, const std::string &msg) : message(msg)
 {
-    string errorType;
+    std::string errorType;
     switch (type)
     {
     case SECTION_MISSING:
@@ -120,138 +125,152 @@ IniError::IniError(IniError::TYPE type, string msg)
     message = "\nError: [" + errorType + "] " + message;
 }
 
-string IniError::toString()
+std::string IniError::toString() const
 {
     return message;
 }
 
-//
+IniParser::IniParser() {}
 
-IniParser::IniParser()
-{
-}
+IniParser::IniParser(const std::string &filename) : filename(filename) {}
 
-IniParser::~IniParser()
-{
-}
+IniParser::~IniParser() {}
 
-IniParser::IniParser(std::string filename)
+void IniParser::addSection(const std::string &sectionName)
 {
-    this->filename = filename;
-}
-
-void IniParser::addSection(std::string sectionName)
-{
+    if (parseTree.find(sectionName) != parseTree.end())
+    {
+        throw IniError(IniError::SECTION_MISSING, "Section '" + sectionName + "' already exists.");
+    }
     currentSection = sectionName;
     parseTree[sectionName] = {};
 }
 
-void IniParser::removeSection(std::string sectionName)
+void IniParser::removeSection(const std::string &sectionName)
 {
     parseTree.erase(sectionName);
 }
 
-template <typename T>
-void IniParser::addValue(string name, T value)
+// Helper function to check if the current section is set
+void IniParser::ensureCurrentSection() const
 {
-    if (currentSection == "")
+    if (currentSection.empty())
     {
-        throw IniError(IniError::SECTION_MISSING, "Section name not set");
+        throw IniError(IniError::SECTION_MISSING, "Section name not set. Cannot add value.");
     }
+}
 
-    string value_str = "";
-    if constexpr (is_same<T, string>::value)
+void IniParser::ensureCurrentSection(const std::string &name) const
+{
+    if (currentSection.empty())
     {
-        value_str = static_cast<string>(value);
+        throw IniError(IniError::SECTION_MISSING, "Section name not set. Cannot add value: " + name);
     }
-    else if constexpr (is_same<T, const char *>::value)
+}
+
+template <typename T>
+void IniParser::addValue(const std::string &name, const T &value)
+{
+    ensureCurrentSection(name);
+    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char *> || std::is_same_v<T, char *>)
     {
-        value_str = string(value);
+        parseTree[currentSection][name] = std::string(value);
     }
     else
     {
-        value_str = to_string(value);
+        parseTree[currentSection][name] = std::to_string(value);
     }
-
-    parseTree[currentSection][name] = value_str;
 }
 
-IniData IniParser::operator[](std::string sectionName)
+IniData IniParser::operator[](const std::string &sectionName) const
 {
-    if (parseTree.find(sectionName) == parseTree.end())
+    auto it = parseTree.find(sectionName);
+    if (it == parseTree.end())
     {
-        throw IniError(IniError::SECTION_MISSING, sectionName + " not found.");
+        throw IniError(IniError::SECTION_MISSING, "Section '" + sectionName + "' not found.");
     }
 
-    return IniData(parseTree[sectionName], sectionName);
+    return IniData(it->second, sectionName);
+}
+
+std::string trim(const std::string &str)
+{
+    size_t start = str.find_first_not_of(" \t");
+    size_t end = str.find_last_not_of(" \t");
+    return (start == std::string::npos) ? "" : str.substr(start, end - start + 1);
 }
 
 void IniParser::parse()
 {
     if (parseTree.size() > 0)
     {
-        currentSection = "";
+        currentSection.clear();
         parseTree.clear();
     }
 
-    // load from file
-    ifstream reader(this->filename);
-    string line;
-    while (getline(reader, line))
+    std::ifstream reader(filename);
+    if (!reader.is_open())
     {
-        // remove spaces
-        line.erase(remove_if(line.begin(), line.end(), iswspace), line.end());
+        throw IniError(IniError::SECTION_MISSING, "Unable to open file: " + filename);
+    }
 
-        if (line.length() == 0)
+    std::string line;
+    while (std::getline(reader, line))
+    {
+        line = trim(line);
+
+        if (line.empty())
             continue;
 
-        // section
         if (line[0] == '[')
         {
-            currentSection = line.substr(1, line.length() - 2);
+            currentSection = trim(line.substr(1, line.length() - 2));
             addSection(currentSection);
         }
-        else if (line.find("=") != string::npos)
+        else if (line.find('=') != std::string::npos)
         {
-            addValue(
-                line.substr(0, line.find("=")),
-                line.substr(line.find("=") + 1));
+            auto delimiterPos = line.find('=');
+            auto key = trim(line.substr(0, delimiterPos));
+            auto value = trim(line.substr(delimiterPos + 1));
+            addValue(key, value);
         }
         else
         {
-            cerr << "invalid line: " << line << endl;
+            std::cerr << "Invalid line: " << line << std::endl;
         }
     }
 
     reader.close();
 }
 
-void IniParser::parse(string filename)
+void IniParser::parse(const std::string &filename)
 {
     this->filename = filename;
     parse();
 }
 
-void IniParser::save()
+void IniParser::save() const
 {
-    ofstream writer(this->filename);
-
-    for (pair<string, map<string, string>> section : parseTree)
+    std::ofstream writer(filename);
+    if (!writer.is_open())
     {
-        writer << "[" << section.first << "]" << endl;
+        throw IniError(IniError::SECTION_MISSING, "Unable to open file for writing: " + filename);
+    }
 
-        for (pair<string, string> data : section.second)
+    for (const auto &section : parseTree)
+    {
+        writer << "[" << section.first << "]" << std::endl;
+        for (const auto &data : section.second)
         {
-            writer << data.first << "=" << data.second << endl;
+            writer << data.first << "=" << data.second << std::endl;
         }
     }
 
     writer.close();
 }
 
-template void IniParser::addValue<int>(string, int);
-template void IniParser::addValue<float>(string, float);
-template void IniParser::addValue<double>(string, double);
-template void IniParser::addValue<bool>(string, bool);
-template void IniParser::addValue<string>(string, string);
-template void IniParser::addValue<const char *>(string, const char *);
+template void IniParser::addValue<int>(const std::string &, const int &);
+template void IniParser::addValue<float>(const std::string &, const float &);
+template void IniParser::addValue<double>(const std::string &, const double &);
+template void IniParser::addValue<bool>(const std::string &, const bool &);
+template void IniParser::addValue<std::string>(const std::string &, const std::string &);

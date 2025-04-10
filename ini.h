@@ -6,6 +6,7 @@
 ** Email   : buchunjukenneth@gmail.com
 **
 ** MODIFIED : [22-11-23] rewrite
+** MODIFIED : [10-04-25] minor changes
 **
 ** Copyright 2020 Kenneth Buchunju <buchunjukenneth@gmail.com>
 **
@@ -15,11 +16,9 @@
 #define INIPARSER_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
+#include <stdexcept>
 
-using namespace std;
-
-// Ini Errors
 class IniError
 {
 public:
@@ -29,64 +28,59 @@ public:
         NAME_MISSING,
         VALUE_MISSING,
         TYPE_MISMATCH,
-        TYPE_LEN // should not reach here
+        TYPE_LEN
     };
 
-    IniError(TYPE type, string msg);
+    IniError(TYPE type, const std::string &msg);
 
-    string toString();
+    std::string toString() const;
 
 private:
-    string message;
+    std::string message;
 };
 
-// Ini section Data
 class IniData
 {
 public:
-    IniData(map<string, string> sectionData, string sectionName);
-    bool getBoolean(string name);
-    string getString(string name);
-    int getInt(string name);
-    float getFloat(string name);
-    double getDouble(string name);
+    IniData(const std::unordered_map<std::string, std::string> &sectionData, const std::string &sectionName);
+    bool getBoolean(const std::string &name) const;
+    std::string getString(const std::string &name) const;
+    int getInt(const std::string &name) const;
+    float getFloat(const std::string &name) const;
+    double getDouble(const std::string &name) const;
 
 private:
-    void checkName(string name);
-    map<string, string> data;
-    string sectionName;
+    void checkName(const std::string &name) const;
+    std::unordered_map<std::string, std::string> data;
+    std::string sectionName;
 };
 
-// Ini file parser
 class IniParser
 {
 public:
     IniParser();
-    IniParser(string filename);
+    explicit IniParser(const std::string &filename);
     ~IniParser();
 
-    // parse file
-    void parse(string filename);
+    void parse(const std::string &filename);
     void parse();
 
-    // sections
-    void addSection(string sectiionName);
-    void removeSection(string sectionName);
+    void addSection(const std::string &sectionName);
+    void removeSection(const std::string &sectionName);
 
-    // add values
     template <typename T>
-    void addValue(string name, T value);
+    void addValue(const std::string &name, const T &value);
 
-    // overloaded operators
-    IniData operator[](string);
+    IniData operator[](const std::string &sectionName) const;
 
-    // save to file
-    void save();
+    void save() const;
 
 private:
-    map<string, map<string, string>> parseTree;
-    string filename;
-    string currentSection;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> parseTree;
+    std::string filename;
+    std::string currentSection;
+    void ensureCurrentSection() const;
+    void ensureCurrentSection(const std::string &name) const;
 };
 
 #endif // INIPARSER_H
