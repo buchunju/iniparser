@@ -67,9 +67,11 @@ public:
 
     void addSection(const std::string &sectionName);
     void removeSection(const std::string &sectionName);
+    size_t getSectionCount() const;
 
     template <typename T>
     void addValue(const std::string &name, const T &value);
+    void addValue(const std::string &key, const char *value);
 
     IniData operator[](const std::string &sectionName) const;
 

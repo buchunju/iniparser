@@ -138,6 +138,11 @@ IniParser::~IniParser() {}
 
 void IniParser::addSection(const std::string &sectionName)
 {
+    if (sectionName.empty())
+    {
+        throw IniError(IniError::SECTION_MISSING, "Section name cannot be empty.");
+    }
+
     if (parseTree.find(sectionName) != parseTree.end())
     {
         throw IniError(IniError::SECTION_MISSING, "Section '" + sectionName + "' already exists.");
@@ -162,9 +167,10 @@ void IniParser::ensureCurrentSection() const
 
 void IniParser::ensureCurrentSection(const std::string &name) const
 {
-    if (currentSection.empty())
+    ensureCurrentSection();
+    if (name.empty())
     {
-        throw IniError(IniError::SECTION_MISSING, "Section name not set. Cannot add value: " + name);
+        throw IniError(IniError::SECTION_MISSING, "Key not set. Cannot add value: " + name);
     }
 }
 
@@ -172,14 +178,30 @@ template <typename T>
 void IniParser::addValue(const std::string &name, const T &value)
 {
     ensureCurrentSection(name);
-    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char *> || std::is_same_v<T, char *>)
+
+    if constexpr (std::is_constructible_v<std::string, T>)
     {
-        parseTree[currentSection][name] = std::string(value);
+        parseTree[currentSection][name] = std::string(static_cast<std::string>(value));
     }
-    else
+    else if constexpr (std::is_same_v<std::decay_t<T>, bool>)
+    {
+        parseTree[currentSection][name] = value ? "true" : "false";
+    }
+    else if constexpr (std::is_arithmetic_v<std::decay_t<T>>)
     {
         parseTree[currentSection][name] = std::to_string(value);
     }
+    else
+    {
+        static_assert(std::is_constructible_v<std::string, T>,
+                      "Type must be convertible to std::string");
+    }
+}
+
+void IniParser::addValue(const std::string &key, const char *value)
+{
+    ensureCurrentSection(key);
+    parseTree[currentSection][key] = std::string(value);
 }
 
 IniData IniParser::operator[](const std::string &sectionName) const
@@ -269,8 +291,14 @@ void IniParser::save() const
     writer.close();
 }
 
+size_t IniParser::getSectionCount() const
+{
+    return parseTree.size();
+}
+
 template void IniParser::addValue<int>(const std::string &, const int &);
 template void IniParser::addValue<float>(const std::string &, const float &);
 template void IniParser::addValue<double>(const std::string &, const double &);
 template void IniParser::addValue<bool>(const std::string &, const bool &);
 template void IniParser::addValue<std::string>(const std::string &, const std::string &);
+template void IniParser::addValue<const char *>(const std::string &, const char *const &);
