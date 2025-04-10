@@ -4,9 +4,9 @@
 
 ## Overview
 
-| section            | name                     | value                       |
+| section            | Key                      | value                       |
 | ------------------ | ------------------------ | --------------------------- |
-| Is enclosed in [ ] | Name that comes before = | Anything that comes after = |
+| Is enclosed in [ ] | key that comes before = | Anything that comes after = |
 |                    |                          |                             |
 
 ### Parser Summary
@@ -19,7 +19,7 @@ The constructor requires **_filename_** as an argument.
 
 ```
 
-Set the section name of stored values.
+Set the section key of stored values.
 
 ```c++
 
@@ -35,11 +35,11 @@ Incase of errors during parsing the ini file an exception is thrown.
 
 ```
 
-Adding name/values pairs to ini.
+Adding key/values pairs to ini.
 
 ```c++
     template <typename T>
-    void addValue(std::string name, T value);
+    void addValue(std::string key, T value);
 
 ```
 
@@ -47,11 +47,11 @@ Getting values from ini file.
 
 ```c++
 
-    int 		getInt(std::string name);
-    std::string getString(std::string name);
-    float 		getFloat(std::string name);
-    double 		getDouble(std::string name);
-    bool 		getBool(std::string name);
+    int   getInt(std::string key);
+    std::string getString(std::string key);
+    float   getFloat(std::string key);
+    double   getDouble(std::string key);
+    bool   getBool(std::string key);
 
 ```
 

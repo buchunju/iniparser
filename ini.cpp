@@ -23,80 +23,80 @@
 IniData::IniData(const std::unordered_map<std::string, std::string> &sectionData, const std::string &sectionName)
     : data(sectionData), sectionName(sectionName) {}
 
-bool IniData::getBoolean(const std::string &name) const
+bool IniData::getBoolean(const std::string &key) const
 {
-    checkName(name);
-    char c = std::tolower(data.at(name)[0]);
+    checkName(key);
+    char c = std::tolower(data.at(key)[0]);
     return (c == 'y' || c == '1' || c == 't');
 }
 
-std::string IniData::getString(const std::string &name) const
+std::string IniData::getString(const std::string &key) const
 {
-    checkName(name);
-    return data.at(name);
+    checkName(key);
+    return data.at(key);
 }
 
-int IniData::getInt(const std::string &name) const
+int IniData::getInt(const std::string &key) const
 {
-    checkName(name);
+    checkName(key);
     try
     {
-        return std::stoi(data.at(name));
+        return std::stoi(data.at(key));
     }
     catch (const std::invalid_argument &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, "The type for " + name + " is not an int.");
+        throw IniError(IniError::TYPE_MISMATCH, "The type for " + key + " is not an int.");
     }
     catch (const std::out_of_range &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, "The value for " + name + " is out of range for an int.");
+        throw IniError(IniError::TYPE_MISMATCH, "The value for " + key + " is out of range for an int.");
     }
 }
 
-float IniData::getFloat(const std::string &name) const
+float IniData::getFloat(const std::string &key) const
 {
-    checkName(name);
+    checkName(key);
     try
     {
-        return std::stof(data.at(name));
+        return std::stof(data.at(key));
     }
     catch (const std::invalid_argument &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, "The type for " + name + " is not a float.");
+        throw IniError(IniError::TYPE_MISMATCH, "The type for " + key + " is not a float.");
     }
     catch (const std::out_of_range &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, "The value for " + name + " is out of range for a float.");
+        throw IniError(IniError::TYPE_MISMATCH, "The value for " + key + " is out of range for a float.");
     }
 }
 
-double IniData::getDouble(const std::string &name) const
+double IniData::getDouble(const std::string &key) const
 {
-    checkName(name);
+    checkName(key);
     try
     {
-        return std::stod(data.at(name));
+        return std::stod(data.at(key));
     }
     catch (const std::invalid_argument &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, "The type for " + name + " is not a double.");
+        throw IniError(IniError::TYPE_MISMATCH, "The type for " + key + " is not a double.");
     }
     catch (const std::out_of_range &e)
     {
-        throw IniError(IniError::TYPE_MISMATCH, "The value for " + name + " is out of range for a double.");
+        throw IniError(IniError::TYPE_MISMATCH, "The value for " + key + " is out of range for a double.");
     }
 }
 
-void IniData::checkName(const std::string &name) const
+void IniData::checkName(const std::string &key) const
 {
-    if (data.find(name) == data.end())
+    if (data.find(key) == data.end())
     {
-        throw IniError(IniError::NAME_MISSING, name + " not in " + sectionName);
+        throw IniError(IniError::NAME_MISSING, key + " not in " + sectionName);
     }
 
-    if (data.at(name).empty())
+    if (data.at(key).empty())
     {
-        throw IniError(IniError::VALUE_MISSING, "Value for " + name + " is missing");
+        throw IniError(IniError::VALUE_MISSING, "Value for " + key + " is missing");
     }
 }
 
@@ -109,7 +109,7 @@ IniError::IniError(TYPE type, const std::string &msg) : message(msg)
         errorType = "SECTION MISSING";
         break;
     case NAME_MISSING:
-        errorType = "NAME MISSING";
+        errorType = "key MISSING";
         break;
     case VALUE_MISSING:
         errorType = "VALUE MISSING";
@@ -140,7 +140,7 @@ void IniParser::addSection(const std::string &sectionName)
 {
     if (sectionName.empty())
     {
-        throw IniError(IniError::SECTION_MISSING, "Section name cannot be empty.");
+        throw IniError(IniError::SECTION_MISSING, "Section key cannot be empty.");
     }
 
     if (parseTree.find(sectionName) != parseTree.end())
@@ -161,35 +161,35 @@ void IniParser::ensureCurrentSection() const
 {
     if (currentSection.empty())
     {
-        throw IniError(IniError::SECTION_MISSING, "Section name not set. Cannot add value.");
+        throw IniError(IniError::SECTION_MISSING, "Section key not set. Cannot add value.");
     }
 }
 
-void IniParser::ensureCurrentSection(const std::string &name) const
+void IniParser::ensureCurrentSection(const std::string &key) const
 {
     ensureCurrentSection();
-    if (name.empty())
+    if (key.empty())
     {
-        throw IniError(IniError::SECTION_MISSING, "Key not set. Cannot add value: " + name);
+        throw IniError(IniError::SECTION_MISSING, "Key not set. Cannot add value: " + key);
     }
 }
 
 template <typename T>
-void IniParser::addValue(const std::string &name, const T &value)
+void IniParser::addValue(const std::string &key, const T &value)
 {
-    ensureCurrentSection(name);
+    ensureCurrentSection(key);
 
     if constexpr (std::is_constructible_v<std::string, T>)
     {
-        parseTree[currentSection][name] = std::string(static_cast<std::string>(value));
+        parseTree[currentSection][key] = std::string(static_cast<std::string>(value));
     }
     else if constexpr (std::is_same_v<std::decay_t<T>, bool>)
     {
-        parseTree[currentSection][name] = value ? "true" : "false";
+        parseTree[currentSection][key] = value ? "true" : "false";
     }
     else if constexpr (std::is_arithmetic_v<std::decay_t<T>>)
     {
-        parseTree[currentSection][name] = std::to_string(value);
+        parseTree[currentSection][key] = std::to_string(value);
     }
     else
     {

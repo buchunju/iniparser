@@ -43,14 +43,14 @@ class IniData
 {
 public:
     IniData(const std::unordered_map<std::string, std::string> &sectionData, const std::string &sectionName);
-    bool getBoolean(const std::string &name) const;
-    std::string getString(const std::string &name) const;
-    int getInt(const std::string &name) const;
-    float getFloat(const std::string &name) const;
-    double getDouble(const std::string &name) const;
+    bool getBoolean(const std::string &key) const;
+    std::string getString(const std::string &key) const;
+    int getInt(const std::string &key) const;
+    float getFloat(const std::string &key) const;
+    double getDouble(const std::string &key) const;
 
 private:
-    void checkName(const std::string &name) const;
+    void checkName(const std::string &key) const;
     std::unordered_map<std::string, std::string> data;
     std::string sectionName;
 };
@@ -70,7 +70,7 @@ public:
     size_t getSectionCount() const;
 
     template <typename T>
-    void addValue(const std::string &name, const T &value);
+    void addValue(const std::string &key, const T &value);
     void addValue(const std::string &key, const char *value);
 
     IniData operator[](const std::string &sectionName) const;
@@ -82,7 +82,7 @@ private:
     std::string filename;
     std::string currentSection;
     void ensureCurrentSection() const;
-    void ensureCurrentSection(const std::string &name) const;
+    void ensureCurrentSection(const std::string &key) const;
 };
 
 #endif // INIPARSER_H
