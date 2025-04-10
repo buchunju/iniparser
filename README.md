@@ -6,12 +6,8 @@
 
 | section            | Key                      | value                       |
 | ------------------ | ------------------------ | --------------------------- |
-<<<<<<< HEAD
 | Is enclosed in [ ] | key that comes before = | Anything that comes after = |
 |                    |                          |                             |
-=======
-| Is enclosed in [ ] | Name that comes before = | Anything that comes after = |
->>>>>>> 60c4533233b5203b7cc4164e675ab779f35aa941
 
 ### Parser Summary
 
