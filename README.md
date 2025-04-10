@@ -7,7 +7,6 @@
 | section            | name                     | value                       |
 | ------------------ | ------------------------ | --------------------------- |
 | Is enclosed in [ ] | Name that comes before = | Anything that comes after = |
-|                    |                          |                             |
 
 ### Parser Summary
 
